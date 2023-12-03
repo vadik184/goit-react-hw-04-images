@@ -1,32 +1,28 @@
-import { Component } from 'react';
+import React, { useEffect } from 'react';
 import { StyledModal, StyledImg } from 'components/Modal/ModalStyled';
 
-export class Modal extends Component {
-  handleKeyDown = event => {
-    if (event.code === 'Escape') {
-      this.props.closeModal();
-    }
-  };
+export const Modal = ({ closeModal, url, tags }) => {
+  useEffect(() => {
+    const handleKeyDown = event => {
+      if (event.code === 'Escape') {
+        closeModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [closeModal]);
 
-  componentDidMount() {
-    window.addEventListener('keydown', this.handleKeyDown);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.handleKeyDown);
-  }
-
-  handleClick = event => {
+  const handleClick = event => {
     if (event.target === event.currentTarget) {
-      this.props.closeModal();
+      closeModal();
     }
   };
 
-  render() {
-    return (
-      <StyledModal onClick={this.handleClick}>
-        <StyledImg src={this.props.url} alt="modal_img" />
-      </StyledModal>
-    );
-  }
-}
+  return (
+    <StyledModal onClick={handleClick}>
+      <StyledImg src={url} alt={tags} />
+    </StyledModal>
+  );
+};

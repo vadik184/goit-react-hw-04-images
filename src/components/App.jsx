@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Searchbar } from 'components/Searchbar/Searchbar';
 import { ImageGallery } from 'components/ImageGallery/ImageGallery';
 import { StyledApp } from 'components/AppStyle';
@@ -14,77 +14,68 @@ export const paramsForNotify = {
   width: '400px',
   fontSize: '24px',
 };
+export const App = () => {
+  const [images, setImages] = useState([]);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [isLoadMore, setIsLoadMore] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [url, setUrl] = useState('');
 
-export class App extends Component {
-  state = {
-    images: [],
-    query: '',
-    page: 1,
-    totalImages: 0,
-    isLoadMore: false,
-    isLoading: false,
-    url: '',
-  };
+  useEffect(() => {
+    async function fetchData() {
+      if (!query) {
+        return;
+      }
 
-  componentDidUpdate(_, prevState) {
-    const { query, page } = this.state;
+      try {
+        setIsLoading(true);
+        const photos = await findImages(query, page);
 
-    if (query !== prevState.query || page !== prevState.page) {
-      this.setState({ isLoading: true, isSearchDisabled: true });
-      findImages(query, page)
-        .then(({ hits: photos, totalHits: total_images }) => {
-          if (!photos.length) {
-            return Notify.failure(
-              'Sorry, there are no images matching your search query. Please try again.',
-              paramsForNotify
-            );
-          }
-          this.setState(prevState => ({
-            images: [...prevState.images, ...photos],
-            isLoadMore: page < Math.ceil(total_images / 12),
-          }));
-        })
-        .catch(error => {
-          Notify.failure(
-            'Oops! Something went wrong! Try reloading the page or make another choice!',
+        if (!photos.hits.length === 0) {
+          return Notify.failure(
+            'Sorry, there are no images matching your search query. Please try again.',
             paramsForNotify
           );
-        })
-        .finally(() => {
-          this.setState({ isLoading: false });
-        });
+        }
+        setImages(prevImages => [...prevImages, ...photos.hits]);
+        setIsLoadMore(page < Math.ceil(photos.totalHits / 12));
+      } catch (error) {
+        Notify.failure(
+          'Oops! Something went wrong! Try reloading the page or make another choice!',
+          paramsForNotify
+        );
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }
+    fetchData();
+  }, [query, page]);
 
-  handleSubmit = query => {
-    if (this.state.query === query) {
-      return;
-    }
-
-    this.setState({ query, images: [], page: 1 });
+  const handleSubmit = query => {
+    setQuery(query);
+    setPage(1);
+    setImages([]);
   };
 
-  openModal = url => {
-    this.setState({ url });
-  };
-  handleLoadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+  const openModal = url => {
+    setUrl(url);
   };
 
-  render() {
-    const { images, isLoadMore, isLoading, url } = this.state;
+  const handleLoadMore = () => {
+    setPage(prevPage => prevPage + 1);
+  };
 
-    return (
-      <StyledApp>
-        {isLoading && <Loader />}
-        <Searchbar onSubmit={this.handleSubmit} />
+  return (
+    <StyledApp>
+      {isLoading && <Loader />}
+      <Searchbar onSubmit={handleSubmit} />
 
-        <ImageGallery images={images} openModal={this.openModal} />
-        {isLoadMore && (
-          <LoadMoreBtn onClick={this.handleLoadMore}>Load more</LoadMoreBtn>
-        )}
-        {url && <Modal closeModal={this.openModal} url={url} />}
-      </StyledApp>
-    );
-  }
-}
+      <ImageGallery images={images} openModal={openModal} />
+      {isLoadMore && (
+        <LoadMoreBtn onClick={handleLoadMore}>Load more</LoadMoreBtn>
+      )}
+      {url && <Modal closeModal={openModal} url={url} />}
+    </StyledApp>
+  );
+};

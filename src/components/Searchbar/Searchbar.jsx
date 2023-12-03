@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import {
   StyledHeader,
   StyledForm,
@@ -15,46 +15,39 @@ export const paramsForNotify = {
   width: '400px',
   fontSize: '24px',
 };
-export class Searchbar extends Component {
-  state = {
-    q: '',
+export const Searchbar = ({ onSubmit }) => {
+  const [query, setQuery] = useState('');
+
+  const handleChange = evt => {
+    setQuery(evt.target.value);
   };
 
-  handleChange = evt => {
-    this.setState({ q: evt.target.value, error: '' });
-  };
-
-  handleSubmit = evt => {
+  const handleSubmit = evt => {
     evt.preventDefault();
 
-    const { q } = this.state;
-
-    if (q.trim() === '') {
+    if (query.trim() === '') {
       Notify.info('Enter your request, please!', paramsForNotify);
       return;
     }
 
-    this.props.onSubmit(q);
+    onSubmit(query);
   };
-
-  render() {
-    return (
-      <StyledHeader>
-        <StyledForm onSubmit={this.handleSubmit}>
-          <StyledformBtn type="submit">
-            <GoSearch size="24" />
-          </StyledformBtn>
-          <StyledInput
-            name="search"
-            type="text"
-            placeholder="search"
-            autoComplete="off"
-            autoFocus
-            defaultValue={this.state.q}
-            onChange={this.handleChange}
-          />
-        </StyledForm>
-      </StyledHeader>
-    );
-  }
-}
+  return (
+    <StyledHeader>
+      <StyledForm onSubmit={handleSubmit}>
+        <StyledformBtn type="submit">
+          <GoSearch size="24" />
+        </StyledformBtn>
+        <StyledInput
+          name="search"
+          type="text"
+          placeholder="search"
+          autoComplete="off"
+          autoFocus
+          defaultValue={query}
+          onChange={handleChange}
+        />
+      </StyledForm>
+    </StyledHeader>
+  );
+};
